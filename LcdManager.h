@@ -1,7 +1,8 @@
 #pragma once
 
 #include <Arduino.h>
-#include <LiquidCrystal.h>
+
+class LiquidCrystal;
 
 template<typename T>
 String to_string(T val)
@@ -69,7 +70,7 @@ private:
 
     bool was_initialized {false};
 
-    LiquidCrystal lcd;
+    LiquidCrystal* lcd;
 };
 
 

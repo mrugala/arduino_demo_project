@@ -1,11 +1,11 @@
 #include "LcdManager.h"
-#include "Arduino.h"
+#include <LiquidCrystal.h>
 #include "project_defines.h"
 
 #define MAX_LINE_LENGTH 0xFF
 
 LcdManager::LcdManager(const LcdPins pins)
-    : lcd(pins.rs, pins.enable, pins.d4, pins.d5, pins.d6, pins.d7)
+    : lcd(new LiquidCrystal(pins.rs, pins.enable, pins.d4, pins.d5, pins.d6, pins.d7))
 {
 
 }
@@ -18,6 +18,8 @@ LcdManager::~LcdManager()
             delete[] display_content[screen];
         delete[] display_content;
     }
+
+    delete lcd;
 }
 
 int LcdManager::init(const unsigned cols, const unsigned rows, const unsigned screens)
@@ -31,7 +33,7 @@ int LcdManager::init(const unsigned cols, const unsigned rows, const unsigned sc
         display_content[screen] = new String[rows];
 
     was_initialized = true;
-    lcd.begin(cols, rows);
+    lcd->begin(cols, rows);
 
     return 0;
 }
