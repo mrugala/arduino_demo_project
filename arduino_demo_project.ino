@@ -7,7 +7,7 @@
 #include "mcp9700a.h"
 
 HC_SR04 hc_sr04(TRIGGER_PIN, ECHO_PIN);
-LiquidCrystal lcd(LCD_RS,LCD_ENABLE,LCD_D4,LCD_D5,LCD_D6,LCD_D7);
+LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 JoyStick joy(JOY_HORZ_PIN, JOY_VERT_PIN, JOY_SEL_PIN);
 Mcp9700A thermometer(TEMP_PIN);
 Servo servo;

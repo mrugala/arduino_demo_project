@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <LiquidCrystal.h>
 
 template<typename T>
 String to_string(T val)
@@ -37,10 +38,10 @@ public:
         const unsigned d7;
     };
 
-    //LcdManager(const LcdPins pins);
-    //virtual ~LcdManager();
+    LcdManager(const LcdPins pins);
+    virtual ~LcdManager();
 
-    //int init(const unsigned cols, const unsigned rows, const unsigned screens);
+    int init(const unsigned cols, const unsigned rows, const unsigned screens);
     
     template<typename... Args>
     void print(const unsigned screen, const unsigned row, Args... args)
@@ -62,9 +63,13 @@ private:
     }
 
     String** display_content;
-    const unsigned cols;
-    const unsigned rows;
-    const unsigned screens;
+    unsigned cols;
+    unsigned rows;
+    unsigned screens;
+
+    bool was_initialized {false};
+
+    LiquidCrystal lcd;
 };
 
 
