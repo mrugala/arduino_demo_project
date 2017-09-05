@@ -26,6 +26,17 @@ String to_string(int val)
     return String(val, DEC);
 }
 
+template<typename T, typename... Args>
+String getString(T val, Args... args)
+{
+    return to_string(val) + getString(args...);
+}
+String getString()
+{
+    return String("");
+}
+
+
 class LcdManager
 {
 public:
@@ -52,25 +63,22 @@ public:
     void goToScreen(const unsigned screen);
 
 private:
-    template<typename T, typename... Args>
-    String getString(T val, Args... args)
-    {
-        return to_string(val) + getString(args...);
-    }
-
-    String getString()
-    {
-        return String("");
-    }
-
     String** display_content;
     unsigned cols;
     unsigned rows;
     unsigned screens;
 
+    struct { 
+        unsigned col;
+        unsigned row;
+        unsigned screen;
+    } current_position;
+
     bool was_initialized {false};
 
     LiquidCrystal* lcd;
+
+    String getContent(const unsigned screen, const unsigned row, const unsigned col);
 };
 
 
