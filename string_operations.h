@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-namespace Str
+namespace StringOps
 {
 
 template<typename T>
