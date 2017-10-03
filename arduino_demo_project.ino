@@ -12,8 +12,9 @@ JoyStick joy(JOY_HORZ_PIN, JOY_VERT_PIN, JOY_SEL_PIN);
 Mcp9700A thermometer(TEMP_PIN);
 Servo servo;
 
-//bool toggle_speaker {false};
+bool toggle_joy {false};
 bool printToSerial {false};
+bool hc_init_successful {true};
 
 //double position = 90;
 
@@ -23,36 +24,48 @@ void setup() {
 //    pinMode(SPEAKER_PIN, OUTPUT); 
     Serial.begin(9600);
     if (hc_sr04.init() < 0)
+    {
         Serial.println("HC-SR04 init failed");
-
+        hc_init_successful = false;
+    }
+    
     lcd.begin(16, 2);
     lcd.setCursor(0, 0);
     lcd.print("HC-SR04 distance:");
     lcd.blink();
     
-//    if (joy.init() < 0)
-//        Serial.println("joystick init failed");
+    if (joy.init() < 0)
+        Serial.println("joystick init failed");
 //    if (thermometer.init() < 0)
 //        Serial.println("MCP9700A init failed");
 }
 
 void loop() {
     delay(200);
-  
-    double dist = hc_sr04.getDistance_cm();
-    if (dist <= 30.)                               
+
+    double dist = 0;
+    if (hc_init_successful)
     {
-        blinkLed();
-    }
-    else
-    {
-        digitalWrite(LED_PIN, LOW);
+        dist = hc_sr04.getDistance_cm();
+        if (dist <= 30.)                               
+        {
+            blinkLed();
+        }
+        else
+        {
+            digitalWrite(LED_PIN, LOW);
+        }
     }
     
-//    if (toggle_speaker)
+//    if (toggle_joy)
 //        analogWrite(SPEAKER_PIN, 100);
 //    else
 //        digitalWrite(SPEAKER_PIN, LOW);
+
+      if (toggle_joy)
+          digitalWrite(LED_PIN, HIGH);
+      else
+          digitalWrite(LED_PIN, LOW);
 
 //    double horizontal = joy.getHorizontalDeviation();
 //    double vertical = joy.getVerticalDeviation();
@@ -82,16 +95,21 @@ void loop() {
         }
     }
 
-    if (printToSerial)
-        Serial.println(dist);
-    lcd.setCursor(0, 1);
-    auto pos = lcd.print(dist);
-    lcd.print("    ");
-    lcd.setCursor(pos, 1);
-//    if (joy.testSelect())
-//    {
-//        toggle_speaker = !toggle_speaker;
-//    }
+    if (hc_init_successful)
+    {
+        if (printToSerial)
+            Serial.println(dist);
+        lcd.setCursor(0, 1);
+        auto pos = lcd.print(dist);
+        lcd.print("    ");
+        lcd.setCursor(pos, 1);
+    }
+    if (joy.testSelect())
+    {
+        Serial.print("joy_sel: ");
+        Serial.println(toggle_joy);
+        toggle_joy = !toggle_joy;
+    }
 }
 
 void blinkLed()
