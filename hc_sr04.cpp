@@ -13,6 +13,9 @@ int HC_SR04::init()
     pinMode(trigger_pin, OUTPUT);
     pinMode(echo_pin, INPUT);
 
+    if (getDistance_cm() == 0.0)
+        return -1;
+
     return 0;
 }
 
