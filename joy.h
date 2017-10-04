@@ -13,7 +13,6 @@ public:
     bool testSelect();
 
 private:
-    typedef void (*IRQ)(void);
     bool* select_state;
 
     const unsigned horizontal_pin;

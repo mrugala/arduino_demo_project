@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Arduino.h"
+#include <Arduino.h>
+#include "project_defines.h"
+
+typedef void (*IRQ)(void);
 
 #if (ARDUINO >= 106 && ARDUINO < 110) || (ARDUINO >= 155)
 #pragma message "compiling with digitalPinToInterrupt support"
