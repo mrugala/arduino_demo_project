@@ -2,79 +2,49 @@
 #include <Servo.h>
 
 #include "project_defines.h"
-#include "hc_sr04.h"
-#include "joy.h"
-#include "mcp9700a.h"
+#include "ControlModule.h"
 
-HC_SR04 hc_sr04(TRIGGER_PIN, ECHO_PIN);
-LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
-JoyStick joy(JOY_HORZ_PIN, JOY_VERT_PIN, JOY_SEL_PIN);
-Mcp9700A thermometer(TEMP_PIN);
-Servo servo;
+//HC_SR04 hc_sr04(TRIGGER_PIN, ECHO_PIN);
+//LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+//JoyStick joy(JOY_HORZ_PIN, JOY_VERT_PIN, JOY_SEL_PIN);
+//Mcp9700A thermometer(TEMP_PIN);
 
-bool toggle_joy {false};
-bool printToSerial {false};
-bool hc_init_successful {true};
-
-//double position = 90;
+ControlModule cm(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN, LIGHT_SWITCH_PIN);
 
 void setup() {
-    pinMode(LED_PIN, OUTPUT);
-//    servo.attach(SERVO_PIN);
-//    pinMode(SPEAKER_PIN, OUTPUT); 
-    Serial.begin(9600);
-    if (hc_sr04.init() < 0)
-    {
-        Serial.println("HC-SR04 init failed");
-        hc_init_successful = false;
-    }
+    Serial.begin(115200);
+//    if (hc_sr04.init() < 0)
+//    {
+//        Serial.println("HC-SR04 init failed");
+//        hc_init_successful = false;
+//    }
     
-    lcd.begin(16, 2);
-    lcd.setCursor(0, 0);
-    lcd.print("HC-SR04 distance:");
-    lcd.blink();
+//    lcd.begin(16, 2);
+//    lcd.setCursor(0, 0);
+//    lcd.print("HC-SR04 distance:");
+//    lcd.blink();
     
-    if (joy.init() < 0)
-        Serial.println("joystick init failed");
+//    if (joy.init() < 0)
+//        Serial.println("joystick init failed");
 //    if (thermometer.init() < 0)
 //        Serial.println("MCP9700A init failed");
+
+    Serial.print("Light switch control module init... ");
+    if (cm.init() < 0)
+    {
+        Serial.println("FAILURE");
+    }
+    else
+    {
+        Serial.println("SUCCESS");
+    }
 }
 
-void loop() {
-    delay(200);
+bool printToSerial {false};
 
-    double dist = 0;
-    if (hc_init_successful)
-    {
-        dist = hc_sr04.getDistance_cm();
-        if (dist <= 30.)                               
-        {
-            blinkLed();
-        }
-        else
-        {
-            digitalWrite(LED_PIN, LOW);
-        }
-    }
-    
-//    if (toggle_joy)
-//        analogWrite(SPEAKER_PIN, 100);
-//    else
-//        digitalWrite(SPEAKER_PIN, LOW);
-
-      if (toggle_joy)
-          digitalWrite(LED_PIN, HIGH);
-      else
-          digitalWrite(LED_PIN, LOW);
-
-//    double horizontal = joy.getHorizontalDeviation();
-//    double vertical = joy.getVerticalDeviation();
-//    double temp = thermometer.getTemperature_C();
-//    double angle = joy.getAngle_deg();
-
-//    position = (angle)/2 + 90;
-    
-//    servo.write(position);
+void loop() 
+{
+    delay(50);
 
     if (Serial.available() > 0) 
     {
@@ -90,25 +60,31 @@ void loop() {
             case 'h':
                 printHelp();
                 break;
+            case '-':
+                cm.setState(false);
+                if (printToSerial)
+                    Serial.println("CM/Info: Light turned OFF");
+                break;
+            case '+':
+                cm.setState(true);
+                if (printToSerial)
+                    Serial.println("CM/Info: Light turned ON");
+                break;    
             default:
+                if (printToSerial)
+                    Serial.println("Error: Invalid input");
                 break;
         }
     }
 
-    if (hc_init_successful)
+    auto prev_state = cm.getDeviceState();
+    cm.updateState();
+    auto current_state = cm.getDeviceState();
+    if (prev_state != current_state && printToSerial)
     {
-        if (printToSerial)
-            Serial.println(dist);
-        lcd.setCursor(0, 1);
-        auto pos = lcd.print(dist);
-        lcd.print("    ");
-        lcd.setCursor(pos, 1);
-    }
-    if (joy.testSelect())
-    {
-        Serial.print("joy_sel: ");
-        Serial.println(toggle_joy);
-        toggle_joy = !toggle_joy;
+        Serial.print("CM/Info: Light turned ");
+        Serial.print(current_state ? "ON" : "OFF");
+        Serial.println(" using a light switch");
     }
 }
 
@@ -117,15 +93,17 @@ void blinkLed()
     static auto state = LOW;
     state = state == LOW ? HIGH : LOW;
     
-    digitalWrite(LED_PIN, state);
+    digitalWrite(LED_BUILTIN, state);
 }
 
 void printHelp()
 {
     Serial.println("Available options:");
-    Serial.println("\th - print help message");
+    Serial.println("\th - print this help message");
     Serial.println("\td - print debug messages");
     Serial.println("\ts - stop printing");
+    Serial.println("\t- - turn light off");
+    Serial.println("\t+ - turn light on");
 }
 
 

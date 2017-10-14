@@ -21,5 +21,6 @@ private:
     const unsigned voltage_detector_pin;
 
     bool* irq_occured;
+    unsigned irq_count = 0;
 };
 

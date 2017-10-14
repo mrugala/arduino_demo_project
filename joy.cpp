@@ -1,5 +1,4 @@
 #include "joy.h"
-#include "Arduino.h"
 #include "project_defines.h"
 #include "IRQ.h"
 #include <math.h> 

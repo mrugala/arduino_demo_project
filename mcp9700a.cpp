@@ -1,5 +1,4 @@
 #include "mcp9700a.h"
-#include "Arduino.h"
 #include "project_defines.h"
 
 #define V_REF   5.

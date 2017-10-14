@@ -1,5 +1,4 @@
 #include "hc_sr04.h"
-#include "Arduino.h"
 #include "project_defines.h"
 
 HC_SR04::HC_SR04(const unsigned trigger_pin, const unsigned echo_pin)
