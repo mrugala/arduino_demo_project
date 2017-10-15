@@ -39,7 +39,7 @@ IRQ(2)
 IRQ(3) 
 #elif defined(ARDUINO_ESP8266_WEMOS_D1MINI)
 #pragma message "compiling IRQs for Wemos D1 Mini"
-IRQ_FLAG(16); //D0
+//IRQ_FLAG(16); //D0 doesn't have interrupt support
 IRQ_FLAG(5);  //D1
 IRQ_FLAG(4);  //D2
 IRQ_FLAG(0);  //D3
@@ -49,7 +49,9 @@ IRQ_FLAG(12); //D6
 IRQ_FLAG(13); //D7
 IRQ_FLAG(15); //D8
 
-#define PREVENT_BOUNCE_16() true
+//Wemos will not use any real buttons, so no need to add any delay to interrupt check
+//it will most definitely be used only to check if the light switch is ON or OFF 
+//#define PREVENT_BOUNCE_16() true 
 #define PREVENT_BOUNCE_5() true
 #define PREVENT_BOUNCE_4() true
 #define PREVENT_BOUNCE_0() true
@@ -59,7 +61,7 @@ IRQ_FLAG(15); //D8
 #define PREVENT_BOUNCE_13() true
 #define PREVENT_BOUNCE_15() true
 
-IRQ(16)
+//IRQ(16)
 IRQ(5)
 IRQ(4)
 IRQ(0)

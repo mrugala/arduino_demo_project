@@ -2,6 +2,11 @@
 #include <Arduino.h>
 #include "IRQ.h"
 
+namespace
+{
+    const static unsigned ZERO_DETECTION_INTERRUPT_THRESHOLD = 3;
+}
+
 ControlModule::ControlModule(const unsigned control_override_pin, const unsigned control_pin, const unsigned voltage_detector_pin)
     : control_override_pin(control_override_pin), control_pin(control_pin), voltage_detector_pin(voltage_detector_pin)
 {
@@ -29,8 +34,7 @@ int ControlModule::init()
           break;
 #elif defined(ARDUINO_ARDUINO_ESP8266_WEMOS_D1MINI)
        case D0:
-          irq = &IRQ_16;
-          irq_occured = &irq_flag_16;
+          return -1;
           break;
        case D1:
           irq = &IRQ_5;
@@ -41,10 +45,12 @@ int ControlModule::init()
           irq_occured = &irq_flag_4;
           break;
        case D3:
+          //TODO: not sure if should support D3 (GPIO0)?
           irq = &IRQ_0;
           irq_occured = &irq_flag_0;
           break;
        case D4:
+          //TODO: not sure if should support D4 (GPIO2)?
           irq = &IRQ_2;
           irq_occured = &irq_flag_2;
           break;
@@ -61,12 +67,13 @@ int ControlModule::init()
           irq_occured = &irq_flag_13;
           break;
        case D8:
+          //TODO: not sure if should support D8 (GPIO15)?
           irq = &IRQ_15;
           irq_occured = &irq_flag_15;
           break;
 #endif
        default:
-          return -101;
+          return -1;
     }
 
     delayMicroseconds(50);
@@ -86,21 +93,19 @@ int ControlModule::init()
     pinMode(control_pin, OUTPUT);
     digitalWrite(control_pin, device_state ? LOW : HIGH);
     
-    delay(500);
-    
     pinMode(control_override_pin, OUTPUT);
     digitalWrite(control_override_pin, LOW);
     
     return 0;
 }
 
-void ControlModule::updateState()
+bool ControlModule::updateState()
 {
     bool prev_voltage_state = voltage_state;
     if (*irq_occured)
     {
         irq_count++;
-        if (irq_count > 3)
+        if (irq_count > ZERO_DETECTION_INTERRUPT_THRESHOLD)
            voltage_state = true;
     }
     else
@@ -116,6 +121,8 @@ void ControlModule::updateState()
     }
 
     digitalWrite(control_pin, device_state ? LOW : HIGH);
+
+    return getDeviceState();
 }
 
 void ControlModule::setState(bool state)

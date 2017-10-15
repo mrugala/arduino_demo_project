@@ -7,7 +7,10 @@ public:
     virtual ~ControlModule();
     
     int init();
-    void updateState();
+    /*
+     * returns state to which it was updated
+     */
+    bool updateState();
     void setState(bool state);
     bool getDeviceState();
     bool getVoltageState();

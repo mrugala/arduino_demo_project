@@ -12,7 +12,7 @@
 ControlModule cm(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN, LIGHT_SWITCH_PIN);
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
 //    if (hc_sr04.init() < 0)
 //    {
 //        Serial.println("HC-SR04 init failed");
@@ -44,7 +44,7 @@ bool printToSerial {false};
 
 void loop() 
 {
-    delay(50);
+    delay(MAIN_LOOP_INTERVAL);
 
     if (Serial.available() > 0) 
     {
@@ -78,8 +78,7 @@ void loop()
     }
 
     auto prev_state = cm.getDeviceState();
-    cm.updateState();
-    auto current_state = cm.getDeviceState();
+    auto current_state = cm.updateState();
     if (prev_state != current_state && printToSerial)
     {
         Serial.print("CM/Info: Light turned ");
