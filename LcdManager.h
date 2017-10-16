@@ -19,6 +19,7 @@ public:
     };
 
     LcdManager(const LcdPins pins);
+    LcdManager(LiquidCrystal* lcd);
     virtual ~LcdManager();
 
     int init(const unsigned cols, const unsigned rows, const unsigned screens);

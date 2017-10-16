@@ -6,7 +6,11 @@
 #define MAX_NUMBER_OF_LINES 0xF
 
 LcdManager::LcdManager(const LcdPins pins)
-    : lcd(new LiquidCrystal(pins.rs, pins.enable, pins.d4, pins.d5, pins.d6, pins.d7))
+    : LcdManager(new LiquidCrystal(pins.rs, pins.enable, pins.d4, pins.d5, pins.d6, pins.d7))
+{
+}
+
+LcdManager::LcdManager(LiquidCrystal* lcd) : lcd(lcd)
 {
     current_position.screen = 0;
     current_position.row = 0;
