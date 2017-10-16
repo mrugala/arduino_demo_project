@@ -51,12 +51,17 @@ void LcdManager::goToScreen(const unsigned screen)
     if (current_position.screen != screen)
     {
         current_position.screen = screen;
+        printImpl(screen);
+    }
+}
+
+void LcdManager::printImpl(const unsigned screen)
+{
+    for (unsigned row = current_position.row; row < current_position.row + this->rows; row++)
+    {
         unsigned display_line = 0;
-        for (unsigned row = current_position.row; row < current_position.row + this->rows; row++)
-        {
-            lcd->setCursor(0, display_line);
-            lcd->print(getContent(screen, row, 0));
-        }
+        lcd->setCursor(0, display_line);
+        lcd->print(getContent(screen, row, 0));
     }
 }
 

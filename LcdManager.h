@@ -27,7 +27,11 @@ public:
     template<typename... Args>
     void print(const unsigned screen, const unsigned row, Args... args)
     {
-         display_content[screen][row] = StringOps::getString(args...);
+        this->display_content[screen][row] = StringOps::getString(args...);
+        if (current_position.screen == screen)
+        {
+            this->printImpl(screen);
+        }
     }
     void goToScreen(const unsigned screen);
 
@@ -47,6 +51,7 @@ private:
 
     LiquidCrystal* lcd;
 
+    void printImpl(const unsigned screen);
     String getContent(const unsigned screen, const unsigned row, const unsigned col);
 };
 
