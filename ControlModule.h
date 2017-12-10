@@ -1,4 +1,7 @@
 #pragma once
+#include <WString.h>
+
+class HTTPClient;
 
 class ControlModule
 {
@@ -14,6 +17,8 @@ public:
     void setState(bool state);
     bool getDeviceState();
     bool getVoltageState();
+    void setHttpClient(HTTPClient* client, String host, unsigned port);
+    bool updateHttpStatus(bool state);
 
 private:
     bool voltage_state = false;
@@ -25,5 +30,9 @@ private:
 
     bool* irq_occured;
     unsigned irq_count = 0;
+
+    HTTPClient* client;
+    String httpHost;
+    unsigned httpPort;
 };
 
