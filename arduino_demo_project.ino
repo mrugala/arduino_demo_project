@@ -186,6 +186,8 @@ void printHelp()
     Serial.println("\t- - turn light off");
     Serial.println("\t+ - turn light on");
     Serial.println("\ti - print device status");
+    Serial.println("\tw - write configuration to EEPROM");
+    Serial.println("\tr - read configuration from EEPROM");
 }
 
 void printStatus()
