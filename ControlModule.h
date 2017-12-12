@@ -11,7 +11,8 @@ public:
     
     int init();
     /*
-     * returns state to which it was updated
+     * Updare state according to zero detection interrupt from light switch
+     * @return state to which it was updated
      */
     bool updateState();
     void setState(bool state);
