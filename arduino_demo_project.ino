@@ -6,7 +6,8 @@
 #include "EepromConfig.h"
 #include "WiFiModule.h"
 
-ControlModule cm(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN, LIGHT_SWITCH_PIN);
+ControlModule cm1(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN_1, LIGHT_SWITCH_PIN_1);
+ControlModule cm2(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN_2, LIGHT_SWITCH_PIN_2);
 EepromConfigManager eeprom(EEPROM_ALLOCATED_SIZE);
 
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
@@ -15,19 +16,16 @@ WiFiModule wifi;
 
 String dev_name;
 
+void updateControlModule(unsigned device_index, ControlModule& cm);
+
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Serial.println("");
 
-    Serial.print("[" + String(millis()/1000., 3) + "] Light switch control module init... ");
-    if (cm.init() < 0)
-    {
-        Serial.println("FAILURE");
-    }
-    else
-    {
-        Serial.println("SUCCESS");
-    }
+    Serial.print("[" + String(millis()/1000., 3) + "] Light switch control module #1 init... ");
+    Serial.println((cm1.init() < 0) ? "FAILURE" : "SUCCESS");
+    Serial.print("[" + String(millis()/1000., 3) + "] Light switch control module #2 init... ");
+    Serial.println((cm2.init() < 0) ? "FAILURE" : "SUCCESS");
 
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
     eeprom.init();
@@ -49,18 +47,15 @@ void setup() {
         Serial.println("FAILURE");
     }
     Serial.print("[" + String(millis()/1000., 3) + "] Setting up HTTP server... ");
-    wifi.initWebServer(config.dev_name, config.auth_token, [&](bool state){ cm.setState(state); });
+    wifi.initWebServer(config.auth_token);
+    wifi.addDevice(config.dev_name + String("1"), [&](bool state){ cm1.setState(state); });
+    wifi.addDevice(config.dev_name + String("2"), [&](bool state){ cm2.setState(state); });
     Serial.println("DONE");
     wifi.initWebClient(config.domoticz_ip, config.domoticz_port);
-    Serial.print("[" + String(millis()/1000., 3) + "] Updating HTTP status according to light switch... ");
-    if (wifi.updateWebStatus(config.dev_name, cm.getDeviceState()))
-    {
-        Serial.println("SUCCESS");
-    }
-    else
-    {
-        Serial.println("FAILURE");
-    }
+    Serial.print("[" + String(millis()/1000., 3) + "] Updating HTTP status according to light switch #1... ");
+    Serial.println(wifi.updateWebStatus(1, cm1.getDeviceState()) ? "SUCCESS" : "FAILURE");
+    Serial.print("[" + String(millis()/1000., 3) + "] Updating HTTP status according to light switch #2... ");
+    Serial.println(wifi.updateWebStatus(2, cm2.getDeviceState()) ? "SUCCESS" : "FAILURE");
 #endif
     Serial.println("[" + String(millis()/1000., 3) + "] Startup finished");
 }
@@ -70,7 +65,6 @@ bool printToSerial {false};
 void loop() 
 {
     delay(MAIN_LOOP_INTERVAL);
-
     
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
     wifi.handleConnection();
@@ -90,18 +84,18 @@ void loop()
                 printHelp();
                 break;
             case '-':
-                cm.setState(false);
+                cm1.setState(false);
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-                if (!wifi.updateWebStatus(dev_name, false))
+                if (!wifi.updateWebStatus(1, false))
                     Serial.println("CM/WARN: Failed to update HTTP status");
 #endif
                 if (printToSerial)
                     Serial.println("CM/Info: Light turned OFF");
                 break;
             case '+':
-                cm.setState(true);
+                cm1.setState(true);
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-                if (!wifi.updateWebStatus(dev_name, true))
+                if (!wifi.updateWebStatus(1, true))
                     Serial.println("CM/WARN: Failed to update HTTP status");
 #endif
                 if (printToSerial)
@@ -123,6 +117,12 @@ void loop()
         }
     }
 
+    updateControlModule(1, cm1);
+    updateControlModule(2, cm2);
+}
+
+void updateControlModule(unsigned device_index, ControlModule& cm)
+{
     auto prev_state = cm.getDeviceState();
     auto current_state = cm.updateState();
     if (prev_state != current_state)
@@ -134,7 +134,7 @@ void loop()
             Serial.println(" using a light switch");
         }
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-        if (!wifi.updateWebStatus(dev_name, current_state))
+        if (!wifi.updateWebStatus(device_index, current_state))
             Serial.println("CM/WARN: Failed to update HTTP status");
 #endif
     }
@@ -156,8 +156,12 @@ void printHelp()
 void printStatus()
 {
     Serial.println("Device status:");
-    Serial.println("\tSwitch state: " + String(cm.getVoltageState()));
-    Serial.println("\tLight state: " + String(cm.getDeviceState()));
+    Serial.println("\tDevice: " + dev_name + "1");
+    Serial.println("\tSwitch state: " + String(cm1.getVoltageState()));
+    Serial.println("\tLight state: " + String(cm1.getDeviceState()));
+    Serial.println("\tDevice: " + dev_name + "2");
+    Serial.println("\tSwitch state: " + String(cm2.getVoltageState()));
+    Serial.println("\tLight state: " + String(cm2.getDeviceState()));
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
     Serial.print(wifi.getStatusString());
 #endif

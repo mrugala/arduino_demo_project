@@ -47,11 +47,12 @@ void WiFiModuleClass<WebClient, WebServer>::updateDevice()
         return;
     }
 
-    if (id == devName)
+    auto devCallback = deviceCallbacks.find(id);
+    if (devCallback != deviceCallbacks.end())
     {
-        changeDeviceStateCallback(state);
+        devCallback->second(state);
 //        if (printToSerial)
-            Serial.println("Server/INFO: Turned " + String(devName) + " switch " + (state ? "ON" : "OFF") );
+            Serial.println("Server/INFO: Turned " + String(devCallback->first) + " switch " + (state ? "ON" : "OFF") );
     }
     else /*if (printToSerial)*/
     {
@@ -92,12 +93,12 @@ int WiFiModuleClass<WebClient, WebServer>::initWebClient(String host, unsigned p
 }
 
 template<class WebClient, class WebServer>
-int WiFiModuleClass<WebClient, WebServer>::initWebServer(String deviceName, String authenticationToken, CallbackFunction callback)
+int WiFiModuleClass<WebClient, WebServer>::initWebServer(String authenticationToken)
 {
     this->server = new WebServer(80);
-    this->devName = deviceName;
+//    this->devName = deviceName;
     this->authToken = authenticationToken;
-    this->changeDeviceStateCallback = callback;
+//    this->changeDeviceStateCallback = callback;
     this->server->on("/switch", [this] {
             this->updateDevice();
         });
@@ -106,7 +107,13 @@ int WiFiModuleClass<WebClient, WebServer>::initWebServer(String deviceName, Stri
 }
 
 template<class WebClient, class WebServer>
-bool WiFiModuleClass<WebClient, WebServer>::updateWebStatus(String device, bool state)
+void WiFiModuleClass<WebClient, WebServer>::addDevice(String deviceName, CallbackFunction callback)
+{
+    deviceCallbacks.insert(std::make_pair(deviceName, callback));
+}
+
+template<class WebClient, class WebServer>
+bool WiFiModuleClass<WebClient, WebServer>::updateWebStatus(unsigned device_index, bool state)
 {
     if (!client)
     {
@@ -115,7 +122,7 @@ bool WiFiModuleClass<WebClient, WebServer>::updateWebStatus(String device, bool 
 
     bool status = false;
     
-    client->begin(httpHost, httpPort, "/json.htm?type=command&param=udevice&idx=1&nvalue=" + String(state ? "1" : "0"));
+    client->begin(httpHost, httpPort, "/json.htm?type=command&param=udevice&idx=" + String(device_index) + "&nvalue=" + String(state ? "1" : "0"));
     int httpCode = client->GET();
     if (httpCode == HTTP_CODE_OK) 
     {

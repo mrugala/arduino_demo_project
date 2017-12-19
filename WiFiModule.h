@@ -2,9 +2,12 @@
 #include <WString.h>
 #include <IPAddress.h>
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
+#include <map>
 #include <functional>
 using CallbackFunction = std::function<void(bool)>;
 #else
+#include <ArduinoSTL.h>
+#include <map>
 #include <Function.h>
 using CallbackFunction = vl::Func<void(bool)>;
 #endif
@@ -18,10 +21,12 @@ public:
     
     int initWiFi(String ssid, String password);
     int initWebClient(String ip, unsigned port);
-    int initWebServer(String deviceName, String authenticationToken, CallbackFunction callback);
+    int initWebServer(String authenticationToken);
+
+    void addDevice(String deviceName, CallbackFunction callback);
 
     void handleConnection();
-    bool updateWebStatus(String device, bool state);
+    bool updateWebStatus(unsigned device_index, bool state);
 
     void updateDevice();
 
@@ -39,9 +44,8 @@ private:
     unsigned httpPort;
 
     WebServer* server;
-    String devName;
     String authToken;
-    CallbackFunction changeDeviceStateCallback;
+    std::map<String, CallbackFunction> deviceCallbacks;
 
     bool connectedToWiFi();
 };

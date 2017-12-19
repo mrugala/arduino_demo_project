@@ -91,10 +91,10 @@ int ControlModule::init()
     attachInterrupt(interrupt, irq, FALLING);
 
     pinMode(control_pin, OUTPUT);
-    digitalWrite(control_pin, device_state ? LOW : HIGH);
+    digitalWrite(control_pin, device_state ? HIGH : LOW);
     
     pinMode(control_override_pin, OUTPUT);
-    digitalWrite(control_override_pin, LOW);
+    digitalWrite(control_override_pin, HIGH);
     
     return 0;
 }
@@ -120,7 +120,7 @@ bool ControlModule::updateState()
         device_state = !device_state;
     }
 
-    digitalWrite(control_pin, device_state ? LOW : HIGH);
+    digitalWrite(control_pin, device_state ? HIGH : LOW);
 
     return getDeviceState();
 }
@@ -129,7 +129,7 @@ void ControlModule::setState(bool state)
 {
     device_state = state;
 
-    digitalWrite(control_pin, device_state ? LOW : HIGH);
+    digitalWrite(control_pin, device_state ? HIGH : LOW);
 }
 
 bool ControlModule::getDeviceState()

@@ -10,11 +10,15 @@ const static unsigned EEPROM_ALLOCATED_SIZE = 1024;
 static unsigned LISTENING_PORT = 80;
 
 //Safe to use: GPIO 4 (D2), 5(D1), 12(D6), 13(D7), 14(D5)
-static const uint8_t LIGHT_SWITCH_PIN     = D5;
 static const uint8_t CONTROL_OVERRIDE_PIN = D1;
-static const uint8_t LIGHT_CONTROL_PIN    = D2;
+static const uint8_t LIGHT_SWITCH_PIN_1   = D5;
+static const uint8_t LIGHT_CONTROL_PIN_1  = D2;
+static const uint8_t LIGHT_SWITCH_PIN_2   = D6;
+static const uint8_t LIGHT_CONTROL_PIN_2  = D7;
 #else
-#define LIGHT_SWITCH_PIN     3
-#define CONTROL_OVERRIDE_PIN 4
-#define LIGHT_CONTROL_PIN    5
+#define CONTROL_OVERRIDE_PIN   3
+#define LIGHT_SWITCH_PIN_1     4
+#define LIGHT_CONTROL_PIN_1    5
+#define LIGHT_SWITCH_PIN_2     6
+#define LIGHT_CONTROL_PIN_2    7
 #endif
