@@ -10,7 +10,9 @@ EepromConfigManager::EepromConfigManager(size_t eepromLength)
 
 int EepromConfigManager::init()
 {
+#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
     EEPROM.begin(eepromLength);
+#endif
     Serial.println("[" + String(millis()/1000., 3) + "] EEPROM initialized with length=" + String(eepromLength) + 
                    ", memory used for config=" + String(USED_EEPROM_MEMORY));
     return 0;
@@ -38,7 +40,9 @@ void EepromConfigManager::writeConfiguration(const EepromConfig& config)
     writeCharArrayToEeprom(DOMOTICZ_IP_POS, config.domoticz_ip, max(config.domoticz_ip_len+1, DOMOTICZ_IP_FIELD_LEN));
     EEPROM.put(DOMOTICZ_PORT_POS, config.domoticz_port);
     writeCharArrayToEeprom(AUTH_TOKEN_POS,  config.auth_token,  max(config.auth_token_len, AUTH_TOKEN_FIELD_LEN));
+#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
     EEPROM.commit();
+#endif
 }
 
 void EepromConfigManager::writeCharArrayToEeprom(const size_t address, const char* buf, const size_t len)

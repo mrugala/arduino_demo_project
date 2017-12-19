@@ -2,38 +2,13 @@
 #include <Arduino.h>
 #include "IRQ.h"
 
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-#include <ESP8266HTTPClient.h>
-#else
-typedef enum {
-    HTTP_CODE_OK = 200
-} t_http_codes;
-
-class HTTPClient
-{
-public:
-    bool begin(String host, uint16_t port, String uri = "/");
-    {
-        return true;
-    }
-    int GET()
-    {
-        return HTTP_CODE_OK;
-    }
-    String getString(void) 
-    {
-        return "";
-    }
-};
-#endif
-
 namespace
 {
     const static unsigned ZERO_DETECTION_INTERRUPT_THRESHOLD = 5;
 }
 
 ControlModule::ControlModule(const unsigned control_override_pin, const unsigned control_pin, const unsigned voltage_detector_pin)
-    : control_override_pin(control_override_pin), control_pin(control_pin), voltage_detector_pin(voltage_detector_pin), client(nullptr)
+    : control_override_pin(control_override_pin), control_pin(control_pin), voltage_detector_pin(voltage_detector_pin)
 {
 }
 
@@ -165,32 +140,5 @@ bool ControlModule::getDeviceState()
 bool ControlModule::getVoltageState()
 {
     return voltage_state;
-}
-
-void ControlModule::setHttpClient(HTTPClient* client, String host, unsigned port)
-{
-    this->client = client;
-    this->httpHost = host;
-    this->httpPort = port;
-}
-
-bool ControlModule::updateHttpStatus(bool state)
-{
-    if (!client)
-    {
-        return true;
-    }
-
-    bool status = false;
-    
-    client->begin(httpHost, httpPort, "/json.htm?type=command&param=udevice&idx=1&nvalue=" + String(state ? "1" : "0"));
-    int httpCode = client->GET();
-    if (httpCode == HTTP_CODE_OK) 
-    {
-//        Serial.println(client->getString());
-        status = true;
-    }
-    client->end();
-    return status;
 }
 
