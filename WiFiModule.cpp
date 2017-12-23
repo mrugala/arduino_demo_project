@@ -1,5 +1,6 @@
 #include "WiFiModule.h"
 #include <Arduino.h>
+#include <Logger.h>
 
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
 #pragma message "compiling with WiFi"
@@ -42,8 +43,8 @@ void WiFiModuleClass<WebClient, WebServer>::updateDevice()
 
     if (token != authToken)
     {
-        Serial.println("Server/ERR: Authentication failed");
-        Serial.println("Server/ERR: got token: " + token + ", expected: " + authToken);
+        Logging::error("Server", "Authentication failed");
+        Logging::error("Server", "Got token: " + token + ", expected: " + authToken);
         return;
     }
 
@@ -51,12 +52,11 @@ void WiFiModuleClass<WebClient, WebServer>::updateDevice()
     if (devCallback != deviceCallbacks.end())
     {
         devCallback->second(state);
-//        if (printToSerial)
-            Serial.println("Server/INFO: Turned " + String(devCallback->first) + " switch " + (state ? "ON" : "OFF") );
+        Logging::info("Server", "Turned " + String(devCallback->first) + " switch " + (state ? "ON" : "OFF") + "\n");
     }
-    else /*if (printToSerial)*/
+    else
     {
-        Serial.println("Server/WARN: Device not present");
+        Logging::warning("Server", "Device not present\n");
     }
 #endif
 }
@@ -138,11 +138,9 @@ void WiFiModuleClass<WebClient, WebServer>::handleConnection()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-//        if (printToSerial)
-            Serial.print("WiFi/INFO: WiFi disconnected - attempt reconnection...");
+        Logging::info("WiFi", "WiFi disconnected - attempt reconnection... ");
         WiFi.begin(wifiSsid.c_str(), wifiPwd.c_str());
-//        if (printToSerial)
-            Serial.println(connectedToWiFi() ? "SUCCESS" : "FAILURE");
+        Logging::info(connectedToWiFi() ? "SUCCESS" : "FAILURE");
     }
 
     server->handleClient();
@@ -165,12 +163,12 @@ bool WiFiModuleClass<WebClient, WebServer>::connectedToWiFi()
 }
 
 template<class WebClient, class WebServer>
-String WiFiModuleClass<WebClient, WebServer>::getStatusString()
+std::vector<String> WiFiModuleClass<WebClient, WebServer>::getStatus()
 {
-    String status;
-    status += "\tWiFi: " + String(WiFi.status() == WL_CONNECTED ? "CONNECTED" : "DISCONNECTED") + ", RSSI: " 
-            + String(WiFi.RSSI()) + "\n";
-    status += "\tIP address: " + toString(WiFi.localIP()) + "\n";
+    std::vector<String> status;
+    status.push_back("\tWiFi: " + String(WiFi.status() == WL_CONNECTED ? "CONNECTED" : "DISCONNECTED") + ", RSSI: " 
+            + String(WiFi.RSSI()));
+    status.push_back("\tIP address: " + toString(WiFi.localIP()));
     return status;
 }
 

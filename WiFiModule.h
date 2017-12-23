@@ -1,6 +1,7 @@
 #pragma once
 #include <WString.h>
 #include <IPAddress.h>
+#include <vector>
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
 #include <map>
 #include <functional>
@@ -30,7 +31,7 @@ public:
 
     void updateDevice();
 
-    String getStatusString();
+    std::vector<String> getStatus();
 
     IPAddress getLocalIp();
     int32_t getRssi();

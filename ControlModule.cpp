@@ -132,12 +132,12 @@ void ControlModule::setState(bool state)
     digitalWrite(control_pin, device_state ? HIGH : LOW);
 }
 
-bool ControlModule::getDeviceState()
+bool ControlModule::getDeviceState() const
 {
     return device_state;
 }
 
-bool ControlModule::getVoltageState()
+bool ControlModule::getVoltageState() const
 {
     return voltage_state;
 }

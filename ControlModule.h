@@ -13,8 +13,8 @@ public:
      */
     bool updateState();
     void setState(bool state);
-    bool getDeviceState();
-    bool getVoltageState();
+    bool getDeviceState() const;
+    bool getVoltageState() const;
 
 private:
     bool voltage_state = false;

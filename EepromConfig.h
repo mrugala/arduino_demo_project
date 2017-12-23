@@ -1,6 +1,19 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdint.h>
+#include <array>
+#include <WString.h>
+
+static constexpr unsigned NUM_DEVICES = 2;
+
+struct DeviceEepromConfig
+{
+    uint8_t id;
+    uint8_t control_override_pin;
+    uint8_t control_pin;
+    uint8_t switch_pin;
+};
 
 struct EepromConfig
 {
@@ -15,7 +28,10 @@ struct EepromConfig
     unsigned short domoticz_port;
     char auth_token[256];
     size_t auth_token_len;
+    std::array<DeviceEepromConfig, NUM_DEVICES> dev_info;
 };
+
+String toString(EepromConfig config);
 
 class EepromConfigManager
 {
@@ -43,7 +59,15 @@ private:
     static constexpr size_t DOMOTICZ_PORT_FIELD_LEN = 2;
     static constexpr size_t AUTH_TOKEN_POS = DOMOTICZ_PORT_POS + DOMOTICZ_PORT_FIELD_LEN;
     static constexpr size_t AUTH_TOKEN_FIELD_LEN = 128;
-    static constexpr size_t USED_EEPROM_MEMORY = AUTH_TOKEN_POS + AUTH_TOKEN_FIELD_LEN;
+    static constexpr size_t DEV_ID_1_POS = AUTH_TOKEN_POS + AUTH_TOKEN_FIELD_LEN;
+    static constexpr size_t DEV_CONTROL_OVERRIDE_PIN_1_POS = DEV_ID_1_POS + 1;
+    static constexpr size_t DEV_CONTROL_PIN_1_POS = DEV_ID_1_POS + 2;
+    static constexpr size_t DEV_SWITCH_PIN_1_POS = DEV_ID_1_POS + 3;
+    static constexpr size_t DEV_ID_2_POS = DEV_ID_1_POS + 4;
+    static constexpr size_t DEV_CONTROL_OVERRIDE_PIN_2_POS = DEV_ID_2_POS + 1;
+    static constexpr size_t DEV_CONTROL_PIN_2_POS = DEV_ID_2_POS + 2;
+    static constexpr size_t DEV_SWITCH_PIN_2_POS = DEV_ID_2_POS + 3;
+    static constexpr size_t USED_EEPROM_MEMORY = DEV_ID_2_POS + 4;
 
     const size_t eepromLength;
 };

@@ -1,105 +1,60 @@
-#include <LiquidCrystal.h>
-#include <Servo.h>
+#include <Logger.h>
 
 #include "project_defines.h"
-#include "ControlModule.h"
 #include "EepromConfig.h"
-#include "WiFiModule.h"
+#include "DeviceManager.h"
 
-ControlModule cm1(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN_1, LIGHT_SWITCH_PIN_1);
-ControlModule cm2(CONTROL_OVERRIDE_PIN, LIGHT_CONTROL_PIN_2, LIGHT_SWITCH_PIN_2);
-EepromConfigManager eeprom(EEPROM_ALLOCATED_SIZE);
-
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-WiFiModule wifi;
-#endif
-
-String dev_name;
-
-void updateControlModule(unsigned device_index, ControlModule& cm);
+EepromConfigManager eeprom(EEPROM_ALLOCATED_SIZE);\
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Serial.println("");
 
-    Serial.print("[" + String(millis()/1000., 3) + "] Light switch control module #1 init... ");
-    Serial.println((cm1.init() < 0) ? "FAILURE" : "SUCCESS");
-    Serial.print("[" + String(millis()/1000., 3) + "] Light switch control module #2 init... ");
-    Serial.println((cm2.init() < 0) ? "FAILURE" : "SUCCESS");
-
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
+    Logging::setVerbosity(Logging::Verbosity::ERROR);
     eeprom.init();
-    Serial.print("[" + String(millis()/1000., 3) + "] Reading config from EEPROM... ");
+    Logging::init("Reading config from EEPROM... \n");
     auto config = eeprom.readConfiguration();
-    dev_name = config.dev_name;
-    Serial.println("DONE");
-    
-    Serial.print("[" + String(millis()/1000., 3) + "] WiFi init... ");
-    if (!wifi.initWiFi(config.wifi_ssid, config.wifi_pwd))
-    {
-        Serial.println("SUCCESS");
-        Serial.println("[" + String(millis()/1000., 3) + "] Connected to: '" + config.wifi_ssid + "' with IP address: "
-                       + toString(wifi.getLocalIp()));
-        Serial.println("[" + String(millis()/1000., 3) + "] WiFi signal RSSI: " + String(wifi.getRssi()));
-    }
-    else
-    {
-        Serial.println("FAILURE");
-    }
-    Serial.print("[" + String(millis()/1000., 3) + "] Setting up HTTP server... ");
-    wifi.initWebServer(config.auth_token);
-    wifi.addDevice(config.dev_name + String("1"), [&](bool state){ cm1.setState(state); });
-    wifi.addDevice(config.dev_name + String("2"), [&](bool state){ cm2.setState(state); });
-    Serial.println("DONE");
-    wifi.initWebClient(config.domoticz_ip, config.domoticz_port);
-    Serial.print("[" + String(millis()/1000., 3) + "] Updating HTTP status according to light switch #1... ");
-    Serial.println(wifi.updateWebStatus(1, cm1.getDeviceState()) ? "SUCCESS" : "FAILURE");
-    Serial.print("[" + String(millis()/1000., 3) + "] Updating HTTP status according to light switch #2... ");
-    Serial.println(wifi.updateWebStatus(2, cm2.getDeviceState()) ? "SUCCESS" : "FAILURE");
-#endif
-    Serial.println("[" + String(millis()/1000., 3) + "] Startup finished");
+//    config.dev_1.id = 1;
+//    config.dev_1.control_override_pin = CONTROL_OVERRIDE_PIN;
+//    config.dev_1.control_pin = LIGHT_CONTROL_PIN_1;
+//    config.dev_1.switch_pin = LIGHT_SWITCH_PIN_1;
+//    config.dev_2.id = 2;
+//    config.dev_2.control_override_pin = CONTROL_OVERRIDE_PIN;
+//    config.dev_2.control_pin = LIGHT_CONTROL_PIN_2;
+//    config.dev_2.switch_pin = LIGHT_SWITCH_PIN_2;
+//    eeprom.writeConfiguration(config);
+    Logging::init("Finished reading EEPROM\n");
+    DeviceManager::instance().init(config);
+    Logging::init("Startup finished\n");
 }
-
-bool printToSerial {false};
 
 void loop() 
 {
     delay(MAIN_LOOP_INTERVAL);
     
 #if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-    wifi.handleConnection();
+    DeviceManager::instance().getWiFiModule().handleConnection();
 #endif
+    const unsigned index = DeviceManager::instance().getControlModules().begin()->first;
     if (Serial.available() > 0) 
     {
         auto read_byte = Serial.read();
         switch (read_byte)
         {
             case 'd':
-                printToSerial = true;
+                Logging::setVerbosity(Logging::Verbosity::DEBUG);
                 break;
             case 's':
-                printToSerial = false;
+                Logging::setVerbosity(Logging::Verbosity::ERROR);
                 break;
             case 'h':
                 printHelp();
                 break;
             case '-':
-                cm1.setState(false);
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-                if (!wifi.updateWebStatus(1, false))
-                    Serial.println("CM/WARN: Failed to update HTTP status");
-#endif
-                if (printToSerial)
-                    Serial.println("CM/Info: Light turned OFF");
+                DeviceManager::instance().setDeviceState(index, false);
                 break;
             case '+':
-                cm1.setState(true);
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-                if (!wifi.updateWebStatus(1, true))
-                    Serial.println("CM/WARN: Failed to update HTTP status");
-#endif
-                if (printToSerial)
-                    Serial.println("CM/Info: Light turned ON");
+                DeviceManager::instance().setDeviceState(index, true);
                 break;
             case 'i':
                 printStatus();
@@ -111,33 +66,12 @@ void loop()
                 readConfiguration();
                 break;    
             default:
-                if (printToSerial)
-                    Serial.println("Error: Invalid input");
+                Logging::info("loop", "Invalid input\n");
                 break;
         }
     }
 
-    updateControlModule(1, cm1);
-    updateControlModule(2, cm2);
-}
-
-void updateControlModule(unsigned device_index, ControlModule& cm)
-{
-    auto prev_state = cm.getDeviceState();
-    auto current_state = cm.updateState();
-    if (prev_state != current_state)
-    {
-        if (printToSerial)
-        {
-            Serial.print("CM/Info: Light turned ");
-            Serial.print(current_state ? "ON" : "OFF");
-            Serial.println(" using a light switch");
-        }
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-        if (!wifi.updateWebStatus(device_index, current_state))
-            Serial.println("CM/WARN: Failed to update HTTP status");
-#endif
-    }
+    DeviceManager::instance().updateControlModules();
 }
 
 void printHelp()
@@ -156,15 +90,10 @@ void printHelp()
 void printStatus()
 {
     Serial.println("Device status:");
-    Serial.println("\tDevice: " + dev_name + "1");
-    Serial.println("\tSwitch state: " + String(cm1.getVoltageState()));
-    Serial.println("\tLight state: " + String(cm1.getDeviceState()));
-    Serial.println("\tDevice: " + dev_name + "2");
-    Serial.println("\tSwitch state: " + String(cm2.getVoltageState()));
-    Serial.println("\tLight state: " + String(cm2.getDeviceState()));
-#if defined(ARDUINO_ESP8266_WEMOS_D1MINI)
-    Serial.print(wifi.getStatusString());
-#endif
+    for (const auto& line : DeviceManager::instance().getStatus())
+    {
+        Serial.println(line);
+    }
 }
 
 void overrideConfiguration()
@@ -185,12 +114,7 @@ void overrideConfiguration()
     config.auth_token_len = Serial.readBytesUntil('\n', config.auth_token, 256); config.auth_token[config.auth_token_len] = 0;
 
     Serial.println("Configuration to be written to EEPROM:");
-    Serial.println("\tdev_name: " + String(config.dev_name) + ", len=" + String(config.dev_name_len));
-    Serial.println("\twifi_ssid: " + String(config.wifi_ssid) + ", len=" + String(config.wifi_ssid_len));
-    Serial.println("\twifi_pwd: " + String(config.wifi_pwd) + ", len=" + String(config.wifi_pwd_len));
-    Serial.println("\tdomoticz_ip: " + String(config.domoticz_ip) + ", len=" + String(config.domoticz_ip_len));
-    Serial.println("\tdomoticz_port: " + String(config.domoticz_port));
-    Serial.println("\tauth_token: " + String(config.auth_token) + ", len=" + String(config.auth_token_len));
+    Serial.print(toString(config));
 
     Serial.print("Override EEPROM? (y/N) ");
     String approval = Serial.readStringUntil('\n');
@@ -212,11 +136,6 @@ void readConfiguration()
 {
     auto config = eeprom.readConfiguration();
     Serial.println("Current configuration read from EEPROM:");
-    Serial.println("\tdev_name: " + String(config.dev_name) + ", len=" + String(config.dev_name_len));
-    Serial.println("\twifi_ssid: " + String(config.wifi_ssid) + ", len=" + String(config.wifi_ssid_len));
-    Serial.println("\twifi_pwd: " + String(config.wifi_pwd) + ", len=" + String(config.wifi_pwd_len));
-    Serial.println("\tdomoticz_ip: " + String(config.domoticz_ip) + ", len=" + String(config.domoticz_ip_len));
-    Serial.println("\tdomoticz_port: " + String(config.domoticz_port));
-    Serial.println("\tauth_token: " + String(config.auth_token) + ", len=" + String(config.auth_token_len));
+    Serial.print(toString(config));
 }
 
